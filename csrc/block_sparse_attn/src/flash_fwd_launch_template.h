@@ -7,7 +7,26 @@
 
 #pragma once
 
+#if BUILD_NUNCHAKU
+
+#include "common.h"
+
+inline void C10_CUDA_KERNEL_LAUNCH_CHECK() {
+    checkCUDA(cudaPeekAtLastError());
+}
+
+namespace pytorch_compat::at::cuda {
+    using ::getCurrentDeviceProperties;
+}
+
+#define C10_CUDA_CHECK checkCUDA
+using namespace pytorch_compat;
+
+#else
+
 #include <ATen/cuda/CUDAContext.h>
+
+#endif
 
 #include "static_switch.h"
 #include "flash.h"

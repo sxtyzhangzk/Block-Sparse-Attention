@@ -7,8 +7,19 @@
 
 #pragma once
 
+#define BUILD_NUNCHAKU 1
+
 #include <cuda.h>
 #include <vector>
+
+#if BUILD_NUNCHAKU
+
+namespace pytorch_compat::at {
+    struct PhiloxCudaState {};
+}
+using namespace pytorch_compat;
+
+#else
 
 #ifdef OLD_GENERATOR_PATH
 #include <ATen/CUDAGeneratorImpl.h>
@@ -17,6 +28,8 @@
 #endif
 
 #include <ATen/cuda/CUDAGraphsUtils.cuh> // For at::cuda::philox::unpack
+
+#endif
 
 constexpr int TOTAL_DIM = 0;
 constexpr int H_DIM = 1;
@@ -77,8 +90,8 @@ struct Flash_fwd_params : public Qkv_params {
     float scale_softmax_log2;
 
     // array of length b+1 holding starting offset of each sequence.
-    int * __restrict__ cu_seqlens_q;
-    int * __restrict__ cu_seqlens_k;
+    const int * __restrict__ cu_seqlens_q;
+    const int * __restrict__ cu_seqlens_k;
 
     // If provided, the actual length of each k sequence.
     int * __restrict__ seqused_k;

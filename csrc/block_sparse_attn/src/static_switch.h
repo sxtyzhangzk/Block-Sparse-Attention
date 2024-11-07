@@ -36,6 +36,32 @@
     }                                        \
   }()
 
+#if BUILD_NUNCHAKU
+
+#define FWD_HEADDIM_SWITCH(HEADDIM, ...)   \
+  [&] {                                    \
+    if (HEADDIM <= 64) {            \
+      constexpr static int kHeadDim = 64;  \
+      return __VA_ARGS__();                \
+    } if (HEADDIM <= 128) {           \
+      constexpr static int kHeadDim = 128; \
+      return __VA_ARGS__();                \
+    }                                      \
+  }()
+
+  #define FWD_BLOCK_HEADDIM_SWITCH(HEADDIM, ...)\
+  [&] {                                       \
+    if (HEADDIM <= 64) {               \
+      constexpr static int kHeadDim = 64;     \
+      return __VA_ARGS__();                   \
+    } else if (HEADDIM <= 128) {           \
+      constexpr static int kHeadDim = 128; \
+      return __VA_ARGS__();                \
+    }                                         \
+  }()
+
+#else
+
 #define FWD_HEADDIM_SWITCH(HEADDIM, ...)   \
   [&] {                                    \
     if (HEADDIM <= 32) {                   \
@@ -78,6 +104,8 @@
       return __VA_ARGS__();                \
     }                                         \
   }()
+
+#endif
 
   #define BWD_BLOCK_HEADDIM_SWITCH(HEADDIM, ...)\
   [&] {                                       \

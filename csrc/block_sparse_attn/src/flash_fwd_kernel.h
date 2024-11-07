@@ -22,6 +22,15 @@
 
 #include "flash_blockmask.h"
 
+#if BUILD_NUNCHAKU
+namespace pytorch_compat::at::cuda::philox {
+    constexpr std::tuple<int64_t, int64_t> unpack(at::PhiloxCudaState state) {
+        return {0, 0};
+    }
+}
+using namespace pytorch_compat;
+#endif
+
 namespace flash {
 
 using namespace cute;
