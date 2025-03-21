@@ -32,27 +32,57 @@ using namespace pytorch_compat;
 #include "flash.h"
 #include "flash_fwd_kernel.h"
 
+__device__ __forceinline__ 
+static void trap_unsupported_arch() {
+    if (blockIdx.x == 0 && blockIdx.y == 0 && threadIdx.x == 0) {
+        printf("This kernel is not supported on your GPU\n");
+    }
+    __syncthreads();
+    __nanosleep(1000000);
+    __trap();
+}
+
 template<typename Kernel_traits, bool Is_dropout, bool Is_causal, bool Is_local, bool Has_alibi, bool Is_even_MN, bool Is_even_K, bool Return_softmax>
 __global__ void flash_fwd_kernel(Flash_fwd_params params) {
+#if defined(__CUDA_ARCH__) && __CUDA_ARCH__ < 800
+    trap_unsupported_arch();
+    return;
+#else
     static_assert(!(Is_causal && Is_local));  // If Is_local is true, Is_causal should be false
     flash::compute_attn<Kernel_traits, Is_dropout, Is_causal, Is_local, Has_alibi, Is_even_MN, Is_even_K, Return_softmax>(params);
+#endif
 }
 
 template<typename Kernel_traits, bool Is_dropout, bool Is_causal, bool Is_local, bool Has_alibi, bool Is_even_MN, bool Is_even_K, bool Return_softmax, bool Is_exact_streaming>
 __global__ void flash_fwd_block_kernel(Flash_fwd_params params) {
+#if defined(__CUDA_ARCH__) && __CUDA_ARCH__ < 800
+    trap_unsupported_arch();
+    return;
+#else
     static_assert(!(Is_causal && Is_local));  // If Is_local is true, Is_causal should be false
     flash::compute_block_attn<Kernel_traits, Is_dropout, Is_causal, Is_local, Has_alibi, Is_even_MN, Is_even_K, Return_softmax, Is_exact_streaming>(params);
+#endif
 }
 
 template<typename Kernel_traits, bool Is_causal, bool Is_local, bool Has_alibi, bool Is_even_MN, bool Is_even_K, bool Split, bool Append_KV>
 __global__ void flash_fwd_splitkv_kernel(Flash_fwd_params params) {
+#if defined(__CUDA_ARCH__) && __CUDA_ARCH__ < 800
+    trap_unsupported_arch();
+    return;
+#else
     flash::compute_attn_splitkv<Kernel_traits, Is_causal, Is_local, Has_alibi, Is_even_MN, Is_even_K, Split, Append_KV>(params);
+#endif
 }
 
 template<typename Kernel_traits, int kBlockM, int Log_max_splits, bool Is_even_K>
 __global__ void flash_fwd_splitkv_combine_kernel(Flash_fwd_params params) {
+#if defined(__CUDA_ARCH__) && __CUDA_ARCH__ < 800
+    trap_unsupported_arch();
+    return;
+#else
     static_assert(Log_max_splits >= 1);
     flash::combine_attn_seqk_parallel<Kernel_traits, kBlockM, Log_max_splits, Is_even_K>(params);
+#endif
 }
 
 template<typename Kernel_traits, bool Is_dropout, bool Is_causal>
